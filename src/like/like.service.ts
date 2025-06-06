@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Like } from './entities/like.entity';
-import { CreateLikeDto } from './dto/create-like.dto';
-import { Post } from 'src/post/entities/post.entity';
 import { User } from 'src/auth/entities/auth.entity';
+import { Post } from 'src/post/entities/post.entity';
+import { Repository } from 'typeorm';
+import { CreateLikeDto } from './dto/create-like.dto';
+import { Like } from './entities/like.entity';
 
 @Injectable()
 export class LikeService {
@@ -33,20 +33,21 @@ export class LikeService {
     return this.likeRepository.save(like);
   }
 
-  findAll() {
+  async findAll(user: User) {
     return this.likeRepository.find({
+      where: { user: { clerkId: user.clerkId } },
       relations: ['post', 'user'],
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user: User) {
     const like = await this.likeRepository.findOne({
-      where: { id },
+      where: { id, user: { clerkId: user.clerkId } },
       relations: ['post', 'user'],
     });
 
     if (!like) {
-      throw new NotFoundException(`Like with id ${id} not found`);
+      throw new NotFoundException(`Like with id ${id} not found or not yours`);
     }
 
     return like;
@@ -54,16 +55,12 @@ export class LikeService {
 
   async remove(id: string, user: User) {
     const like = await this.likeRepository.findOne({
-      where: { id },
+      where: { id, user: { clerkId: user.clerkId } },
       relations: ['user'],
     });
 
     if (!like) {
-      throw new NotFoundException(`Like with id ${id} not found`);
-    }
-
-    if (like.user.id !== user.id) {
-      throw new Error('Unauthorized');
+      throw new NotFoundException(`Like with id ${id} not found or not yours`);
     }
 
     await this.likeRepository.remove(like);

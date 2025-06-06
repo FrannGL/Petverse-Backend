@@ -6,50 +6,50 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
+  UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { Auth } from 'src/auth/decorators';
-import { Request } from 'express';
-import { ParseUUIDPipe } from '@nestjs/common';
 import { User } from 'src/auth/entities/auth.entity';
+import { ClerkAuthGuard } from 'src/auth/guards/clerk-auth.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
-@Auth()
+@UseGuards(ClerkAuthGuard)
 @Controller('comments')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
-  create(@Body() createCommentDto: CreateCommentDto, @Req() req: Request) {
-    const user = req.user as User;
+  create(
+    @Body() createCommentDto: CreateCommentDto,
+    @CurrentUser() user: User,
+  ) {
     return this.commentService.create(createCommentDto, user);
   }
 
   @Get()
-  findAll() {
-    return this.commentService.findAll();
+  findAll(@CurrentUser() user: User) {
+    return this.commentService.findAll(user);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.commentService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.commentService.findOne(id, user);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Req() req: Request,
+    @CurrentUser() user: User,
   ) {
-    const user = req.user as User;
     return this.commentService.update(id, updateCommentDto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const user = req.user as User;
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.commentService.remove(id, user);
   }
 }

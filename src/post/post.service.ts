@@ -22,7 +22,7 @@ export class PostService {
     private readonly petRepository: Repository<Pet>,
 
     @InjectRepository(Like)
-    private likeRepository: Repository<Like>,
+    private readonly likeRepository: Repository<Like>,
   ) {}
 
   async create(createPostDto: CreatePostDto, user: User) {
@@ -60,9 +60,17 @@ export class PostService {
     return postsWithLikes;
   }
 
-  async findOne(id: string) {
-    const post = await this.postRepository.findOne({ where: { id } });
+  async findOne(id: string, user: User) {
+    const post = await this.postRepository.findOne({
+      where: { id },
+      relations: ['author', 'pet'],
+    });
+
     if (!post) throw new NotFoundException('Post not found');
+
+    if (post.author.id !== user.id) {
+      throw new ForbiddenException('No tienes permiso para ver este post');
+    }
 
     const likes = await this.getLikesCount(id);
 

@@ -36,19 +36,25 @@ export class CommentService {
     return await this.commentRepository.save(comment);
   }
 
-  async findAll() {
+  async findAll(user: User) {
     return await this.commentRepository.find({
+      where: {
+        author: { clerkId: user.clerkId },
+      },
       relations: ['author', 'post'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user: User) {
     const comment = await this.commentRepository.findOne({
       where: { id },
       relations: ['author', 'post'],
     });
     if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.author.clerkId !== user.clerkId) {
+      throw new ForbiddenException('You are not the author of this comment');
+    }
     return comment;
   }
 
@@ -59,11 +65,10 @@ export class CommentService {
     });
     if (!comment) throw new NotFoundException('Comment not found');
 
-    if (comment.author.id !== user.id)
+    if (comment.author.clerkId !== user.clerkId)
       throw new ForbiddenException('You are not the author of this comment');
 
     Object.assign(comment, updateCommentDto);
-
     return await this.commentRepository.save(comment);
   }
 
@@ -74,7 +79,7 @@ export class CommentService {
     });
     if (!comment) throw new NotFoundException('Comment not found');
 
-    if (comment.author.id !== user.id)
+    if (comment.author.clerkId !== user.clerkId)
       throw new ForbiddenException('You are not the author of this comment');
 
     await this.commentRepository.remove(comment);

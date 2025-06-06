@@ -27,7 +27,7 @@ export class PetsService {
 
   async findAllByUser(user: User) {
     return await this.petRepository.find({
-      where: { owner: { id: user.id } },
+      where: { owner: { clerkId: user.clerkId } },
     });
   }
 
@@ -42,7 +42,7 @@ export class PetsService {
 
   async update(id: string, updatePetDto: UpdatePetDto, user: User) {
     const pet = await this.findOne(id);
-    if (pet.owner.id !== user.id) {
+    if (pet.owner.clerkId !== user.clerkId) {
       throw new ForbiddenException('No puedes editar esta mascota');
     }
     Object.assign(pet, updatePetDto);
@@ -51,7 +51,7 @@ export class PetsService {
 
   async remove(id: string, user: User) {
     const pet = await this.findOne(id);
-    if (pet.owner.id !== user.id) {
+    if (pet.owner.clerkId !== user.clerkId) {
       throw new ForbiddenException('No puedes eliminar esta mascota');
     }
     await this.petRepository.remove(pet);

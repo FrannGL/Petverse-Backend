@@ -7,49 +7,52 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Auth } from 'src/auth/decorators';
-import { Request } from 'express';
-import { User } from 'src/auth/entities/auth.entity';
 
-@Auth()
+import { User } from 'src/auth/entities/auth.entity';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { ClerkAuthGuard } from 'src/auth/guards/clerk-auth.guard';
+import { Public } from 'src/auth/decorators/role-protected.decorator';
+
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @HttpPost()
-  create(@Body() createPostDto: CreatePostDto, @Req() req: Request) {
-    const user = req.user as User;
-    return this.postService.create(createPostDto, user);
-  }
-
+  @Public()
   @Get()
   findAll() {
     return this.postService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.postService.findOne(id);
+  @UseGuards(ClerkAuthGuard)
+  @HttpPost()
+  create(@Body() createPostDto: CreatePostDto, @CurrentUser() user: User) {
+    return this.postService.create(createPostDto, user);
   }
 
+  @UseGuards(ClerkAuthGuard)
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.postService.findOne(id, user);
+  }
+
+  @UseGuards(ClerkAuthGuard)
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePostDto: UpdatePostDto,
-    @Req() req: Request,
+    @CurrentUser() user: User,
   ) {
-    const user = req.user as User;
     return this.postService.update(id, updatePostDto, user);
   }
 
+  @UseGuards(ClerkAuthGuard)
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
-    const user = req.user as User;
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
     return this.postService.remove(id, user);
   }
 }

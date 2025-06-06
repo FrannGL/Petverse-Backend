@@ -27,9 +27,6 @@ export class User {
   @Column('text', { unique: true })
   email: string;
 
-  @Column('text', { select: false })
-  password: string;
-
   @Column({ nullable: true })
   avatarUrl?: string;
 
@@ -62,7 +59,9 @@ export class User {
 
   @BeforeInsert()
   checkFieldsBeforeInsert() {
-    this.email = this.email.toLowerCase().trim();
+    if (this.email) {
+      this.email = this.email.toLowerCase().trim();
+    }
   }
 
   @BeforeUpdate()

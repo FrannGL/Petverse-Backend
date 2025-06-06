@@ -6,30 +6,28 @@ import {
   Param,
   Patch,
   Post,
-  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
 
-import { Auth } from 'src/auth/decorators';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { User } from 'src/auth/entities/auth.entity';
+import { ClerkAuthGuard } from 'src/auth/guards/clerk-auth.guard';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
 import { PetsService } from './pet.service';
 
-@Auth()
+@UseGuards(ClerkAuthGuard)
 @Controller('pets')
 export class PetsController {
   constructor(private readonly petsService: PetsService) {}
 
   @Post()
-  create(@Body() createPetDto: CreatePetDto, @Req() req: Request) {
-    const user = req.user as User;
+  create(@Body() createPetDto: CreatePetDto, @CurrentUser() user: User) {
     return this.petsService.create(createPetDto, user);
   }
 
   @Get()
-  findAll(@Req() req: Request) {
-    const user = req.user as User;
+  findAll(@CurrentUser() user: User) {
     return this.petsService.findAllByUser(user);
   }
 
@@ -42,15 +40,13 @@ export class PetsController {
   update(
     @Param('id') id: string,
     @Body() updatePetDto: UpdatePetDto,
-    @Req() req: Request,
+    @CurrentUser() user: User,
   ) {
-    const user = req.user as User;
     return this.petsService.update(id, updatePetDto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: Request) {
-    const user = req.user as User;
+  remove(@Param('id') id: string, @CurrentUser() user: User) {
     return this.petsService.remove(id, user);
   }
 }
